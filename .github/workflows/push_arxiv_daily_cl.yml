@@ -1,0 +1,66 @@
+name: push_arxiv_daily_cl
+
+env:
+  PYTHON_VERSION: "3.10" # set this to the Python version to use
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2,8,14,20 * * *' # 从UTC 1点开始每6小时（1/7/13/19点）
+
+jobs:
+  daily-push:
+    runs-on: ubuntu-latest
+    env:
+      FEISHU_URL: ${{ secrets.FEISHU_URL_cl }}
+      LLM_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      LLM_BASE_URL: "https://api.deepseek.com"
+      LLM_MODEL: "deepseek-chat"
+      QUERY: "cs.CL"
+      LIMITS: 10
+      MIN_SCORE: 5
+      PROMPT: "筛选NLP与大模型领域的高质量论文，需与推荐/搜索/广告场景相关。核心方向：大模型用于推荐/搜索、对话式推荐、意图理解、查询改写、文本召回/排序、prompt工程、RAG应用。优先考虑：工业应用导向、顶会论文（ACL/EMNLP/NAACL/KDD）、可落地方案。排除：纯NLP基础研究（与推荐/搜索无关）。"
+      # 评分权重配置（可选）
+      # SCORE_INNOVATION: 3
+      # SCORE_QUALITY: 3
+      # SCORE_PRACTICAL: 2
+      # SCORE_IMPACT: 2
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python version
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install tqdm requests openai
+
+      - name: PUSH ARXIV DAILY
+        run: python arxiv.py
+
+      - name: Commit files
+        id: commit
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "github-actions"
+          git add --all
+          if [ -z "$(git status --porcelain)" ]; then
+             echo "push=false" >> $GITHUB_OUTPUT
+          else
+             git commit -m "chore: update confs" -a
+             echo "push=true" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Push changes
+        if: steps.commit.outputs.push == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref_name }}
