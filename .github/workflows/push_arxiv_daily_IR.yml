@@ -11,6 +11,7 @@ on:
 jobs:
   daily-push:
     runs-on: ubuntu-latest
+    environment: Algorithm-Practice-in-Industry-self   # 👈 关键
     timeout-minutes: 30  # 添加超时限制，防止挂起
     env:
       FEISHU_URL: ${{ secrets.FEISHU_URL_IR }}
