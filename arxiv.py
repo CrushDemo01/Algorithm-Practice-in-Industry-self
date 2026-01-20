@@ -334,6 +334,7 @@ def rank_papers(papers: list[dict], top_k: int = None, min_score: float = None) 
 
 # ============== 飞书推送 ==============
 def send_feishu_message(title: str, content: str, url: str = None):
+    """发送富文本消息到飞书"""
     url = url or FEISHU_URL
     if not url:
         raise Exception("未设置 FEISHU_URL 环境变量")
@@ -341,11 +342,27 @@ def send_feishu_message(title: str, content: str, url: str = None):
     card_data = {
         "config": {"wide_screen_mode": True},
         "header": {
-            "template": "green",
-            "title": {"tag": "plain_text", "content": title[:250]}
+            "template": "turquoise",  # 青色主题，更专业
+            "title": {"tag": "plain_text", "content": f"📚 {title[:240]}"}
         },
         "elements": [
-            {"tag": "markdown", "content": content[:25000]}
+            {
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": f"**🔍 今日精选论文推送**\n{content[:24000]}"
+                }
+            },
+            {"tag": "hr"},  # 分割线
+            {
+                "tag": "note",
+                "elements": [
+                    {
+                        "tag": "plain_text",
+                        "content": f"🤖 由 AI 智能筛选 | 评分标准：创新性 {SCORE_INNOVATION}分 + 技术质量 {SCORE_QUALITY}分 + 实用价值 {SCORE_PRACTICAL}分 + 影响力 {SCORE_IMPACT}分"
+                    }
+                ]
+            }
         ]
     }
     headers = {"Content-Type": "application/json"}
@@ -358,7 +375,7 @@ def send_feishu_message(title: str, content: str, url: str = None):
         pass
 
     # 回退纯文本
-    fallback = {"msg_type": "text", "content": {"text": f"{title}\n{content}"[:25000]}}
+    fallback = {"msg_type": "text", "content": {"text": f"📚 {title}\n\n{content}"[:25000]}}
     requests.post(url, json=fallback, headers=headers)
 
 
@@ -401,14 +418,18 @@ def cronjob():
             author_str = "Unknown"
 
         msg_content = (
-            f"[{msg_title}]({url})\n"
-            f"Authors: {author_str}\n"
-            f"Pub Date: {pub_date} | Score: {score:.2f}/10\n"
-            f"AI Rationale: {reason or 'None'}\n"
-            f"Translated (Powered by {LLM_MODEL}):\n{translated}\n"
+            f"**📄 {msg_title}**\n\n"
+            f"🔗 [查看论文]({url})\n\n"
+            f"👥 **作者**: {author_str}\n"
+            f"📅 **发布日期**: {pub_date}\n"
+            f"⭐ **AI 评分**: {score:.1f}/10\n"
+            f"💡 **推荐理由**: {reason or '高质量论文'}\n\n"
+            f"---\n\n"
+            f"**📝 中文摘要** (由 {LLM_MODEL} 翻译)\n\n"
+            f"{translated}\n"
         )
 
-        push_title = f'Arxiv:{QUERY}[{ii}]@{current_time}'
+        push_title = f'{QUERY.upper()} 论文推荐 #{ii+1}/{len(papers)}'
         send_feishu_message(push_title, msg_content)
         time.sleep(5)
 
