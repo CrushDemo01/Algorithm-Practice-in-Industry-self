@@ -43,7 +43,7 @@ jobs:
           cache: 'pip'  # 启用 pip 缓存，加速依赖安装
 
       - name: Install dependencies
-        run: pip install --no-cache-dir tqdm requests openai
+        run: pip install -r requirements.txt
 
       - name: Run arXiv paper fetcher
         run: python arxiv.py
