@@ -54,7 +54,7 @@ python arxiv.py
 
 ```
 ├── arxiv.py                # 主程序
-├── arxiv.json              # 论文缓存
+├── arxiv_ids.json          # 论文 ID 缓存（避免重复评分/翻译）
 └── .github/workflows/      # GitHub Actions 配置
 ```
 

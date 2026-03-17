@@ -20,8 +20,9 @@ jobs:
       LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
       QUERY: ${{ secrets.QUERY_CL || 'cs.CL' }}
       LIMITS: ${{ secrets.LIMITS || '10' }}
-      MIN_SCORE: ${{ secrets.MIN_SCORE || '5' }}
-      PROMPT: ${{ secrets.PROMPT_CL || '筛选NLP与大模型领域的高质量论文，需与推荐/搜索/广告场景相关。核心方向：大模型用于推荐/搜索、对话式推荐、意图理解、查询改写、文本召回/排序、prompt工程、RAG应用。优先考虑：工业应用导向、顶会论文（ACL/EMNLP/NAACL/KDD）、可落地方案。排除：纯NLP基础研究（与推荐/搜索无关）。' }}
+      PRECISION_MODE: ${{ secrets.PRECISION_MODE || '1' }}
+      MIN_SCORE: ${{ secrets.MIN_SCORE || '6.5' }}
+      PROMPT: ${{ secrets.PROMPT_CL || '精度优先：仅保留与推荐/搜索/广告直接相关的 NLP/LLM 论文。必须：检索/排序/重排、query理解/改写、意图识别、RAG检索增强、对话式推荐/搜索、用户建模、广告文案与点击意图等。优先：真实检索/推荐数据集与指标，在线或系统约束（延迟/成本），明确可落地方案。排除：与检索/推荐/广告无关的通用NLP（翻译/生成/语法等）、纯prompt花活、纯benchmark报告、无实证结果。评分只依据标题+摘要明确陈述。' }}
       SCORE_INNOVATION: ${{ secrets.SCORE_INNOVATION || '3' }}
       SCORE_QUALITY: ${{ secrets.SCORE_QUALITY || '3' }}
       SCORE_PRACTICAL: ${{ secrets.SCORE_PRACTICAL || '2' }}

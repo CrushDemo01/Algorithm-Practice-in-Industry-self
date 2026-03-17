@@ -15,8 +15,9 @@ arxiv.py
 ├── LLMClient             # LLM client (OpenAI compatible) with retry logic
 ├── translate()           # Batch translate summaries (temperature=0.3)
 ├── search_arxiv_papers() # Fetch from arXiv API (XML parsing)
-├── save_and_translate()  # Cache management (ID-based) + translation
-├── rank_papers()         # LLM-based scoring and filtering (temperature=0.4)
+├── filter_new_papers()   # Cache filtering (ID-based)
+├── rank_papers()         # LLM-based scoring and filtering (English, temperature=0.4)
+├── update_cache()        # Persist ID cache (atomic write)
 ├── send_feishu_message() # Push to Feishu webhook
 └── cronjob()             # Main entry point
 ```
@@ -57,6 +58,11 @@ python arxiv.py
 | `SCORE_QUALITY` | Technical quality weight (0-10) | 3 |
 | `SCORE_PRACTICAL` | Practical value weight (0-10) | 2 |
 | `SCORE_IMPACT` | Impact weight (0-10) | 2 |
+| `PRECISION_MODE` | Precision-first filtering (strict keep) | 0 |
+| `TRANSLATE_WORKERS` | Translation concurrency | 5 |
+| `RANK_BATCH_SIZE` | Ranking batch size | 10 |
+| `ABSTRACT_MAX_CHARS` | Max abstract chars per paper | 800 |
+| `PUSH_SLEEP_SEC` | Sleep between Feishu pushes | 2 |
 
 ## Advanced Configuration
 
@@ -111,9 +117,11 @@ The system uses optimized prompts for translation and scoring:
 ## Data Flow
 
 1. `search_arxiv_papers()` → Fetch from arXiv API
-2. `save_and_translate()` → Check cache (by arXiv ID), translate new papers
-3. `rank_papers()` → LLM scoring and filtering (with progress indicators)
-4. `send_feishu_message()` → Push to Feishu
+2. `filter_new_papers()` → Check cache (by arXiv ID), keep only new papers
+3. `rank_papers()` → LLM scoring and filtering (English abstracts)
+4. `translate()` → Translate only selected papers (concurrent)
+5. `update_cache()` → Persist cache for scanned IDs
+6. `send_feishu_message()` → Push to Feishu
 
 ## GitHub Actions
 

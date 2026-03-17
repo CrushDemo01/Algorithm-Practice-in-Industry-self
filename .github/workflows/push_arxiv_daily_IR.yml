@@ -20,8 +20,9 @@ jobs:
       LLM_MODEL: ${{ secrets.LLM_MODEL || 'deepseek-chat' }}
       QUERY: ${{ secrets.QUERY_IR || 'cs.IR' }}
       LIMITS: ${{ secrets.LIMITS || '10' }}
-      MIN_SCORE: ${{ secrets.MIN_SCORE || '5' }}
-      PROMPT: ${{ secrets.PROMPT_IR || '筛选推荐系统、搜索与信息检索领域的高质量论文。核心方向：召回/排序/重排模型、用户建模、冷启动、多目标优化、大模型应用于推荐/搜索。优先考虑：工业界知名公司（Google/Meta/字节/阿里等）、顶会论文（SIGIR/RecSys/KDD/WWW）、可落地方案。排除：纯理论、非推荐/搜索领域论文。' }}
+      PRECISION_MODE: ${{ secrets.PRECISION_MODE || '1' }}
+      MIN_SCORE: ${{ secrets.MIN_SCORE || '6.5' }}
+      PROMPT: ${{ secrets.PROMPT_IR || '精度优先：仅保留与推荐/搜索/信息检索直接相关且贡献明确的论文。必须：召回/排序/重排(learning-to-rank)、用户建模、冷启动、多目标优化、评估与系统、LLM用于检索/推荐（RAG、query rewrite、rerank）。优先：工业可部署、效率/延迟/成本、真实数据集与指标、充分对比与消融。排除：非RecSys/IR、纯理论/无实证、纯survey、仅数据集/benchmark介绍、仅更大模型或更长prompt无新方法。评分只依据标题+摘要明确陈述。' }}
       SCORE_INNOVATION: ${{ secrets.SCORE_INNOVATION || '3' }}
       SCORE_QUALITY: ${{ secrets.SCORE_QUALITY || '3' }}
       SCORE_PRACTICAL: ${{ secrets.SCORE_PRACTICAL || '2' }}
