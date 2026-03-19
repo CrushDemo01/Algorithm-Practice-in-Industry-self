@@ -77,6 +77,76 @@ class LLMClient:
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
 
+    @staticmethod
+    def _extract_text_content(content) -> str:
+        if content is None:
+            return ""
+        if isinstance(content, str):
+            return content.strip()
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, str):
+                    text = item.strip()
+                elif isinstance(item, dict):
+                    text = str(item.get("text", "")).strip()
+                else:
+                    text = str(getattr(item, "text", "")).strip()
+                if text:
+                    parts.append(text)
+            return "\n".join(parts).strip()
+        return str(content).strip()
+
+    def _extract_response_text(self, response) -> str:
+        if isinstance(response, str):
+            return response.strip()
+
+        if response is None:
+            raise ValueError("LLM 返回为空")
+
+        if hasattr(response, "output_text"):
+            text = self._extract_text_content(getattr(response, "output_text", None))
+            if text:
+                return text
+
+        choices = getattr(response, "choices", None)
+        if choices:
+            first_choice = choices[0]
+            message = getattr(first_choice, "message", None)
+            if message is not None:
+                text = self._extract_text_content(getattr(message, "content", None))
+                if text:
+                    return text
+            text = self._extract_text_content(getattr(first_choice, "text", None))
+            if text:
+                return text
+
+        if hasattr(response, "model_dump"):
+            return self._extract_response_text(response.model_dump())
+
+        if isinstance(response, dict):
+            text = self._extract_text_content(response.get("output_text"))
+            if text:
+                return text
+
+            choices = response.get("choices")
+            if isinstance(choices, list) and choices:
+                first_choice = choices[0]
+                if isinstance(first_choice, dict):
+                    message = first_choice.get("message", {})
+                    if isinstance(message, dict):
+                        text = self._extract_text_content(message.get("content"))
+                        if text:
+                            return text
+                    text = self._extract_text_content(first_choice.get("text"))
+                    if text:
+                        return text
+
+        preview = repr(response)
+        if len(preview) > 200:
+            preview = preview[:200] + "..."
+        raise TypeError(f"无法从 LLM 响应中提取文本，response_type={type(response).__name__}, preview={preview}")
+
     def call(self, user_content: str, system_prompt: dict = None, temperature: float = 1.0) -> str:
         messages = []
         if system_prompt:
@@ -90,7 +160,7 @@ class LLMClient:
             stream=False,
             timeout=120  # 增加 API 超时控制
         )
-        return response.choices[0].message.content.strip()
+        return self._extract_response_text(response)
 
     def retry_call(self, user_content: str, system_prompt: dict = None, temperature: float = 1.0,
                    attempts: int = 3, base_delay: int = 60) -> str | None:
@@ -98,7 +168,7 @@ class LLMClient:
             try:
                 return self.call(user_content, system_prompt, temperature)
             except Exception as e:
-                print(f"请求失败（尝试 {attempt + 1}/{attempts}）：{e}")
+                print(f"请求失败（尝试 {attempt + 1}/{attempts}，model={self.model}）：{type(e).__name__}: {e}")
                 if attempt < attempts - 1:
                     time.sleep(base_delay * (attempt + 1))
         return None
